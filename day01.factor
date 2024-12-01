@@ -18,7 +18,7 @@ prettyprint sequences sorting splitting ;
 : part2 ( input -- n )
   unzip
   [
-    ! stack looks like "left number"
+    ! stack looks like "left number" "entire right list"
     dupd swap [ = ] curry count *
   ] curry map
   sum
