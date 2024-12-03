@@ -1,7 +1,8 @@
 IN: aoc.2024.day02
 
-USING: assocs io.encodings.utf8 io.files kernel math math.parser
-prettyprint ranges sequences sorting splitting ;
+USING: arrays assocs io.encodings.utf8 io.files kernel math
+math.order math.parser prettyprint ranges sequences sorting
+splitting ;
 
 ! this took SO LONG
 : windows ( input sz -- output )
@@ -26,5 +27,20 @@ prettyprint ranges sequences sorting splitting ;
 : part1 ( input -- output )
   [ part1-line ] count
   ;
+
+: skipping-one ( seq -- seqs )
+  ! create a list of the original list, plus each list minus one elt
+  [ length ] keep swap 1 - [0..b]
+  swap '[ _
+    swap cut-slice  1 tail  append
+  ] map
+  ;
+
+: part2 ( input -- output )
+  [
+    [ skipping-one ] keep prefix
+    [ part1-line ] any?
+  ] count
+  ;
  
-part1 .
+[ part1 ] [ part2 ] bi
