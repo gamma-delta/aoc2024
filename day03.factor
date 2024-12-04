@@ -40,6 +40,5 @@ sequences sequences.generalizations ;
   } case ]
   { 0 t } swap reduce first ;
 
-"inputs/day03.txt" utf8 file-contents
-[ part1 ] [ part2 ] bi
-
+! "inputs/day03.txt" utf8 file-contents
+! [ part1 ] [ part2 ] bi
