@@ -1,54 +1,67 @@
 IN: aoc.2024.day03
 
-USING: arrays assocs io.encodings.utf8 io.files kernel locals
-math math.order math.parser math.vectors prettyprint ranges
-sequences sequences.deep sorting splitting strings ;
+USING: arrays assocs continuations io.encodings.utf8 io.files
+kernel locals math math.order math.parser math.vectors
+prettyprint ranges sequences sequences.deep sorting splitting
+strings tools.annotations ;
 
-: lines-across ( lines -- lines' ) ;
+: ?index* ( ns nested-seq -- x )
+  [ [ swap nth ] reduce ] [ 3drop f ] recover ;
 
-: lines-down ( lines -- lines' )
-  [ first length [0..b) ] keep [ nth ] cartesian-map [ >string ] map
+! Returns the size as { y x }, the order to index in
+: grid-size ( lines -- sz )
+  [ ] [ first ] bi [ length ] bi@ 2array ;
+
+: all-in-grid ( sz -- grid-idxs )
+  [ [0..b) ] map first2 cartesian-product flatten1 ;
+
+:: walk-recurse ( grid delta cursor target-left -- b? )
+  target-left empty?
+  [ t ]
+  [
+    cursor grid ?index*  target-left first =
+    [ grid delta  delta cursor v+  target-left rest  walk-recurse ]
+    [ f ] if
+  ] if
+  ; inline recursive
+: deltas8 ( -- d )
+  { -1 0 1 } dup cartesian-product flatten1
+  [ { 0 0 } = ] reject ;
+: part1 ( input -- n )
+  [ grid-size all-in-grid ] keep 
+  [
+    swap ! grid start
+    deltas8 [ swap "XMAS" walk-recurse ] 2with count
+  ] curry map sum
   ;
 
-: diagonal-stripe-indexes ( start maxs -- idxs )
-  [ [a..b) ] 2map first2 zip ;
-: topcorner-indexes ( w h -- idxs )
-  [ [0..b) ] [ 1 swap [a..b) ] bi*
-  [ [ 0 2array ] map ] [ [ 0 swap 2array ] map ] bi* append
+: is-sm-or-ms ( str -- b? )
+  [ "SM" = ] [ "MS" = ] bi or ;
+: extract-x ( grid coord -- 5chars )
+  { 
+    { -1 -1 } { 1 1 }
+    { -1 1 } { 1 -1 }
+    { 0 0 }
+  }
+  [ v+ swap ?index* ] 2with map 
+  [ >string ] [ 2drop f ] recover
   ;
-: diagonal-indexes ( w h -- idxs )
-  [ topcorner-indexes ] [ 2array ] 2bi
-  [ diagonal-stripe-indexes ] curry map
-  ;
-: reverse-diagonal ( diag w -- diag' )
-  ! Swap each X for w-x
-  [ [ swap first2 [ - 1 - ] dip 2array ] curry map ] curry map
-  ;
-: diagonals-indexes ( w h -- idxs )
-  [ diagonal-indexes ] 2keep
-  drop [ reverse-diagonal ] 2keep drop swap append
-  ;
+: 3and ( x y z -- b? ) and and ;
+: check-x-mas ( 5chars -- b? )
+  [
+    [ 0 2 rot  subseq  is-sm-or-ms ]
+    [ 2 4 rot  subseq  is-sm-or-ms ]
+    [ 4 swap   nth     65 = ] tri 3and
+  ] [ f ] if* ;
 
-: index* ( ns nested-seq -- x )
-  [ swap nth ] reduce ;
-
-: lines-diag ( lines -- lines' )
-  ! Get length down,across (the order to index* in)
-  [ [ ] [ first ] bi [ length ] bi@ ] keep -rot
-  diagonals-indexes
-  [ [ swap index* ] with map >string ] with map
+: part2 ( input -- n )
+  [ grid-size all-in-grid ] keep 
+  [
+    swap extract-x check-x-mas
+  ] curry count
   ;
-
-: wordsearch-strings ( lines -- lines' )
-  [ lines-across ] [ lines-down ] [ lines-diag ] tri 3append
-  dup [ reverse ] map append ;
-
-: part1 ( lines -- n )
-  wordsearch-strings dup [ reverse ] map append
-  [ "XMAS" subseq-of? ] count ;
 
 "inputs/day04.txt" utf8 file-lines
-! part1 .
-wordsearch-strings .
+[ part1 ] [ part2 ] bi
 
 ! 1209: too low
